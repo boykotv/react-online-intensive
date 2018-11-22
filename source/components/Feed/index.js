@@ -12,8 +12,8 @@ import Styles from './styles.m.css';
 
 export default class Feed extends Component {
     static propTypes = {
-        currentUserFirstName: PropTypes.string,
-        avatar: PropTypes.string,
+        currentUserFirstName: PropTypes.string.isRequired,
+        avatar: PropTypes.string.isRequired,
     }
 
     render() {
