@@ -1,22 +1,26 @@
 // Core
 import React, { Component } from 'react';
 
+//Components
+import Feed from 'components/Feed';
+import { Provider } from 'components/HOC/withProfile';
+
+//Instruments
+import avatar from 'theme/assets/lisa';
+
+const options = {
+    avatar,
+    currentUserFirstName: 'Lisa',
+    currentUserLastName: 'Simpson',
+}
+
+
 export default class App extends Component {
     render() {
-        return (
-            <h1
-                style = {{
-                    display:         'flex',
-                    justifyContent:  'center',
-                    alignItems:      'center',
-                    minHeight:       '100vh',
-                    backgroundColor: '#070A13',
-                    color:           'white',
-                    fontSize:        24,
-                    fontWeight:      '600',
-                }}>
-                Добро пожаловать!
-            </h1>
+        return ( 
+            <Provider value = { options }>
+                <Feed />
+            </Provider>
         );
     }
 }
