@@ -14,7 +14,6 @@ const options = {
     currentUserLastName: 'Simpson',
 }
 
-
 export default class App extends Component {
     render() {
         return ( 
