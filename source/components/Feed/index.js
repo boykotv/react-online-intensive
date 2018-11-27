@@ -100,32 +100,13 @@ export default class Feed extends Component {
     }
 
     async _removePost (id) {
-        const {currentUserFirstName, currentUserLastName} = this.props;
+        //const {currentUserFirstName, currentUserLastName} = this.props;
         this._setPostsFetchingState(true);
-
-        console.log('удалить пост с этим id', id);
 
         await delay(1200);
 
-        const newPosts = this.state.posts.map((post) => {
-            if (post.id !== id) {
-
-                console.log('оставить этот пост в массиве', post.id);
-
-                return {
-                    ...post,
-                    likes: [
-                        {
-                            id:         getUniqueID(),
-                            firstName:  currentUserFirstName,
-                            lastName:   currentUserLastName,
-                        }
-                    ],
-                };
-            }        
-               return post;
-        });
-
+        const newPosts = this.state.posts.filter(post => post.id != id);
+        
         console.log('newPosts', newPosts);
         this.setState({
             posts: newPosts,
