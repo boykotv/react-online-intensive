@@ -3,7 +3,6 @@ import React, { Component } from 'react';
 import {createPortal} from 'react-dom';
 import PropTypes from 'prop-types';
 
-
 //Instruments
 import Styles from './styles.m.css';
 
