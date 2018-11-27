@@ -71,13 +71,13 @@ export default class Feed extends Component {
     }
 
     async _likePost (id) {
-        const {currentUserFirstName, currentUserLastName} = this.props;
+        const { currentUserFirstName, currentUserLastName } = this.props;
         this._setPostsFetchingState(true);
 
         await delay(1200);
 
         const newPosts = this.state.posts.map((post) => {
-            if (post.id === id) {
+            if ( post.id === id ) {
                 return {
                     ...post,
                     likes: [
@@ -100,14 +100,12 @@ export default class Feed extends Component {
     }
 
     async _removePost (id) {
-        //const {currentUserFirstName, currentUserLastName} = this.props;
         this._setPostsFetchingState(true);
 
         await delay(1200);
 
         const newPosts = this.state.posts.filter(post => post.id != id);
         
-        console.log('newPosts', newPosts);
         this.setState({
             posts: newPosts,
             isPostFetching: false,
@@ -117,12 +115,12 @@ export default class Feed extends Component {
     render() {
         const { posts, isPostFetching } = this.state;
         const postsJSX = posts.map((post) => {
-            return <Post key = { post.id } {...post} _likePost = { this._likePost } _removePost = { this._removePost } />;
+            return <Post key = { post.id } { ...post } _likePost = { this._likePost } _removePost = { this._removePost } />;
         });
 
         return (
                 <section className = { Styles.feed }>
-                    <Spinner isSpinning = {isPostFetching} />
+                    <Spinner isSpinning = { isPostFetching } />
                     <StatusBar />
                     <Composer _createPost = { this._createPost }/>
                     { postsJSX }
