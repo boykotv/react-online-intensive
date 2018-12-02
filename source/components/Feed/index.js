@@ -34,7 +34,8 @@ export default class Feed extends Component {
             if (
                 `${currentUserFirstName} ${currentUserLastName}` !==
                 `${meta.authorFirstName} ${meta.authorLastName}` 
-            ) {
+            ) 
+            {
                 this.setState(({ posts }) => ({
                     posts: [createdPost, ...posts],
                 }));
@@ -54,11 +55,25 @@ export default class Feed extends Component {
             }
         });
 
+        socket.on('like', (postJSON) => {
+            const { data: likedPost, meta } = JSON.parse(postJSON);
+            
+            if (
+                `${currentUserFirstName} ${currentUserLastName}` !==
+                `${meta.authorFirstName} ${meta.authorLastName}` 
+            ) 
+            {
+                this.setState(({ posts }) => ({
+                    posts:posts.map((post) => post.id === likedPost.id ? likedPost : post),
+                }));
+            }
+        });
     }
 
     componentWillUnmount () {
         socket.removeListener('create');
         socket.removeListener('remove');
+        socket.removeListener('like');
     }
 
     _setPostsFetchingState = (state) => {
@@ -115,9 +130,7 @@ export default class Feed extends Component {
         const { data: likedPost} = await response.json();
 
         this.setState(({ posts }) => ({
-            posts: posts.map(
-                (post) => post.id === likedPost.id ? likedPost : post,
-            ),
+            posts: posts.map((post) => post.id === likedPost.id ? likedPost : post),
             isPostFetching: false,
         }));
     };
