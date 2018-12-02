@@ -19,14 +19,8 @@ export default class Post extends Component {
         likes:       array.isRequired,
         id:          string.isRequired,
     };
-
-    constructor() {
-        super();
-
-        this._removePost = this._removePost.bind(this);     
-    }
     
-    _removePost () {
+    _removePost = () => {
         const { _removePost, id } = this.props;
 
         _removePost(id);
@@ -44,7 +38,7 @@ export default class Post extends Component {
                         <a>{ `${ context.currentUserFirstName } ${ context.currentUserLastName }` }</a>
                         <time>{ moment.unix(created).format('MMMM D h:mm:ss a') }</time>
                         <p>{ comment }</p>
-                        <Like _likePost = { _likePost } id = { id } likes = { likes } { ...context } />
+                        <Like _likePost = { _likePost } id = { id } likes = { likes } />
                     </section>
                 )}
             </Consumer>
