@@ -100,11 +100,12 @@ export default class Feed extends Component {
     }
 
     async _removePost (id) {
+        const { posts } = this.state;
         this._setPostsFetchingState(true);
 
         await delay(1200);
 
-        const newPosts = this.state.posts.filter(post => post.id != id);
+        const newPosts = posts.filter(post => post.id != id);
         
         this.setState({
             posts: newPosts,
