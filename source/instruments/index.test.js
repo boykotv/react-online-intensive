@@ -43,6 +43,7 @@ describe('instruments:', () => {
     });
 
     test('getFullApiUrl function should produse a string', () => {
+        expect(typeof getFullApiUrl('hi', 'lectrum')).toBe('string');
         expect(getFullApiUrl('hi', 'lectrum')).toBe('hi/lectrum');
     });
 
