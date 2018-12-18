@@ -1,68 +1,119 @@
 // Core
 import React, { Component } from 'react';
-import moment from 'moment';
+import { Transition, CSSTransition, TransitionGroup } from 'react-transition-group';
+import { fromTo } from 'gsap';
 
 //Components
+import { withProfile } from 'components/HOC/withProfile';
 import StatusBar from 'components/StatusBar';
 import Composer from 'components/Composer';
 import Post from 'components/Post';
 import Spinner from 'components/Spinner'; 
+import Catcher from '../Catcher';
+import Postman from '../Postman';
+import Counter from '../Counter';
 
 //Instruments
 import Styles from './styles.m.css';
-import {getUniqueID, delay} from 'instruments';
+import { api, TOKEN, GROUP_ID } from 'config/api';
+import { socket } from 'socket/init';
 
+@withProfile
 export default class Feed extends Component {
-    constructor() {
-        super();
-
-        this._createPost = this._createPost.bind(this);
-        this._setPostsFetchingState = this._setPostsFetchingState.bind(this);        
-        this._likePost = this._likePost.bind(this);
-        this._removePost = this._removePost.bind(this);        
-    }
-
     state = {
-        posts: [
-            { 
-                id: '123', 
-                comment: 'Hi!', 
-                created: 1526825076849,
-                likes: [],
-            }, 
-            { 
-                id: '1234', 
-                comment: 'Hiiiiiiiiiiiiiiii!', 
-                created: 1526825076855,
-                likes: [],
-            },
-            { 
-                id: '12345', 
-                comment: 'Hiiiiii!', 
-                created: 1526825076855,
-                likes: [],
-            }
-        ],
+        posts:          [],
         isPostFetching: false,
     }
+    
+    componentDidMount() {
+        const {currentUserFirstName, currentUserLastName} = this.props;
 
-    _setPostsFetchingState (state) {
+        this._fetchPosts();
+
+        socket.emit('join', GROUP_ID);
+
+        socket.on('create', (postJSON) => {
+            const { data: createdPost, meta } = JSON.parse(postJSON);
+            
+            if (
+                `${currentUserFirstName} ${currentUserLastName}` !==
+                `${meta.authorFirstName} ${meta.authorLastName}` 
+            ) 
+            {
+                this.setState(({ posts }) => ({
+                    posts: [createdPost, ...posts],
+                }));
+            }
+        });
+
+        socket.on('remove', (postJSON) => {
+            const { data: removedPost, meta } = JSON.parse(postJSON);
+            
+            if (
+                `${currentUserFirstName} ${currentUserLastName}` !==
+                `${meta.authorFirstName} ${meta.authorLastName}` 
+            ) {
+                this.setState(({ posts }) => ({
+                    posts: posts.filter((post) => post.id !== removedPost.id),
+                }));
+            }
+        });
+
+        socket.on('like', (postJSON) => {
+            const { data: likedPost, meta } = JSON.parse(postJSON);
+            
+            if (
+                `${currentUserFirstName} ${currentUserLastName}` !==
+                `${meta.authorFirstName} ${meta.authorLastName}` 
+            ) 
+            {
+                this.setState(({ posts }) => ({
+                    posts:posts.map((post) => post.id === likedPost.id ? likedPost : post),
+                }));
+            }
+        });
+    }
+
+    componentWillUnmount () {
+        socket.removeListener('create');
+        socket.removeListener('remove');
+        socket.removeListener('like');
+    }
+
+    _setPostsFetchingState = (state) => {
         this.setState({
             isPostFetching: state,
         })
     }
 
-    async _createPost (comment) {
+    _fetchPosts = async () => {
         this._setPostsFetchingState(true);
 
-        const post = {
-            id:      getUniqueID(),
-            created: moment().utc(),
-            comment,
-            likes:   [],
-        };
+        const response = await fetch(api, {
+            method: 'GET',
+        });
 
-        await delay(1200);
+        const { data: posts } = await response.json();
+
+        this.setState({
+            posts,
+            isPostFetching: false,
+        });
+    };
+
+    _createPost = async (comment) => {
+        this._setPostsFetchingState(true);
+
+        const response = await fetch(api, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: TOKEN,
+            },
+            body: JSON.stringify({ comment }),
+        });
+
+        const { data: post } = await response.json();
 
         this.setState (({ posts }) => ({
             posts: [post, ...posts],
@@ -70,61 +121,92 @@ export default class Feed extends Component {
         }));
     }
 
-    async _likePost (id) {
-        const { currentUserFirstName, currentUserLastName } = this.props;
+    _likePost = async (id) => {
         this._setPostsFetchingState(true);
 
-        await delay(1200);
-
-        const newPosts = this.state.posts.map((post) => {
-            if ( post.id === id ) {
-                return {
-                    ...post,
-                    likes: [
-                        {
-                            id:         getUniqueID(),
-                            firstName:  currentUserFirstName,
-                            lastName:   currentUserLastName,
-                        }
-                    ],
-                };
-            }
-
-            return post;
+        const response = await fetch(`${api}/${id}`, {
+            method: 'PUT',
+            headers: {
+                Authorization: TOKEN,
+            },
         });
 
-        this.setState({
-            posts: newPosts,
-            isPostFetching: false,
-        })
-    }
+        const { data: likedPost} = await response.json();
 
-    async _removePost (id) {
+        this.setState(({ posts }) => ({
+            posts: posts.map((post) => post.id === likedPost.id ? likedPost : post),
+            isPostFetching: false,
+        }));
+    };
+
+    _removePost = async (id) => {
         const { posts } = this.state;
         this._setPostsFetchingState(true);
 
-        await delay(1200);
-
-        const newPosts = posts.filter(post => post.id != id);
+        await fetch(`${api}/${id}`, {
+            method: 'DELETE',
+            headers: {
+                Authorization: TOKEN,
+            },
+        });
         
         this.setState({
-            posts: newPosts,
+            posts:          posts.filter((post) => post.id !== id),
             isPostFetching: false,
         })
     }
+
+    _animateComposerEnter = (composer) => {
+        fromTo(
+            composer, 
+            1, 
+            { opacity: 0, rotationX: 50}, 
+            { opacity: 1, rotationX: 0 },
+        );
+    }
+   
 
     render() {
         const { posts, isPostFetching } = this.state;
         const postsJSX = posts.map((post) => {
-            return <Post key = { post.id } { ...post } _likePost = { this._likePost } _removePost = { this._removePost } />;
+            return (
+                <CSSTransition
+                    classNames = { {
+                        enter:       Styles.postInStart,
+                        enterActive: Styles.postInEnd,
+                        exit:        Styles.postOutStart,
+                        exitActive:  Styles.postOutEnd,
+                    } }
+                    key = { post.id }
+                    timeout = { {
+                        enter: 500,
+                        exit: 500,
+                    } }>
+                    <Catcher>
+                        <Post                         
+                            { ...post } 
+                            _likePost = { this._likePost } 
+                            _removePost = { this._removePost } 
+                        />
+                    </Catcher> 
+                </CSSTransition>   
+            );
         });
 
         return (
                 <section className = { Styles.feed }>
                     <Spinner isSpinning = { isPostFetching } />
                     <StatusBar />
-                    <Composer _createPost = { this._createPost }/>
-                    { postsJSX }
+                    <Transition
+                        appear
+                        in
+                        timeout = {4000}
+                        onEnter = { this._animateComposerEnter }>                        
+                        <Composer _createPost = { this._createPost }/>
+                    </Transition>  
+                    <Counter count = { postsJSX.length }/>
+                    <Postman/>                  
+                    <TransitionGroup>{ postsJSX }</TransitionGroup>
                 </section>            
         );
     }
